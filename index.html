@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Giftify UA</title>
   <link rel="icon" href="/favicon.ico" />
-  <!-- СТАБІЛЬНИЙ CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@1.0.0/dist/tonconnect-ui.min.js"></script>
+  <!-- ОФІЦІЙНИЙ CDN -->
+  <script src="https://ton-connect.github.io/demo/dapp-tonconnect-ui/tonconnect-ui.min.js"></script>
   <style>
     body { font-family: Arial; text-align: center; background: #1a1a1a; color: #fff; margin: 0; padding: 20px; }
     button { padding: 12px 24px; margin: 10px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; }
@@ -25,11 +25,10 @@
   <div id="status"></div>
 
   <script type="module">
-    // Чекаємо, поки CDN завантажиться
     const initTonConnect = () => {
       if (!window.TonConnectUI) {
-        console.error('TON Connect не завантажився! Перевір CDN.');
-        document.getElementById('status').innerHTML = '<p style="color:red;">Помилка завантаження TON Connect</p>';
+        console.error('TON Connect не завантажився!');
+        document.getElementById('status').innerHTML = '<p style="color:red;">Помилка CDN</p>';
         return;
       }
 
@@ -51,7 +50,6 @@
             const balance = await connector.getBalance();
             document.querySelector('.balance').innerText = `Баланс: ${(balance / 1e9).toFixed(4)} TON`;
           } catch (e) {
-            console.error(e);
           }
         } else {
           statusEl.innerHTML = '';
@@ -60,14 +58,12 @@
       });
     };
 
-    // Запускаємо після завантаження
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initTonConnect);
     } else {
       initTonConnect();
     }
 
-    // MOCK
     if (!window.Telegram?.WebApp) {
       console.warn('Telegram WebApp not found – using mock');
       window.Telegram = { WebApp: { initData: 'mock', initDataUnsafe: { user: { id: 123 } } } };
@@ -75,3 +71,4 @@
   </script>
 </body>
 </html>
+
