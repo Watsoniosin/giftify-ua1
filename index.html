@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Giftify UA</title>
+  <link rel="icon" href="/favicon.ico" />
   <script src="https://unpkg.com/@tonconnect/ui@1.0.0/dist/tonconnect-ui.min.js"></script>
   <style>
     body { font-family: Arial; text-align: center; background: #1a1a1a; color: #fff; margin: 0; padding: 20px; }
@@ -23,7 +24,6 @@
   <div id="status"></div>
 
   <script type="module">
-    // === TON CONNECT ===
     const connector = new TON_CONNECT.UI.TonConnectUI({
       manifestUrl: 'https://giftify-ua1.vercel.app/tonconnect-manifest.json',
       buttonRootId: 'connect'
@@ -31,7 +31,6 @@
 
     const statusEl = document.getElementById('status');
 
-    // Перевірка підключення
     connector.onStatusChange(async (wallet) => {
       if (wallet) {
         statusEl.innerHTML = `
@@ -39,7 +38,6 @@
           <p><b>Адреса:</b> ${wallet.account.address.slice(0, 6)}...${wallet.account.address.slice(-4)}</p>
         `;
 
-        // Баланс (у TON)
         try {
           const balance = await connector.getBalance();
           document.querySelector('.balance').innerText = `Баланс: ${(balance / 1e9).toFixed(4)} TON`;
@@ -52,7 +50,7 @@
       }
     });
 
-    // === MOCK ДЛЯ БРАУЗЕРА ===
+    // MOCK
     if (!window.Telegram?.WebApp) {
       console.warn('Telegram WebApp not found – using mock');
       window.Telegram = { WebApp: { initData: 'mock', initDataUnsafe: { user: { id: 123 } } } };
@@ -60,4 +58,3 @@
   </script>
 </body>
 </html>
-
