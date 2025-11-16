@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Giftify UA</title>
   <link rel="icon" href="/favicon.ico" />
+  <!-- TON CONNECT CDN -->
   <script src="https://unpkg.com/@tonconnect/ui@1.0.0/dist/tonconnect-ui.min.js"></script>
   <style>
     body { font-family: Arial; text-align: center; background: #1a1a1a; color: #fff; margin: 0; padding: 20px; }
@@ -24,33 +25,48 @@
   <div id="status"></div>
 
   <script type="module">
-    const connector = new TON_CONNECT.UI.TonConnectUI({
-      manifestUrl: 'https://giftify-ua1.vercel.app/tonconnect-manifest.json',
-      buttonRootId: 'connect'
-    });
-
-    const statusEl = document.getElementById('status');
-
-    connector.onStatusChange(async (wallet) => {
-      if (wallet) {
-        statusEl.innerHTML = `
-          <p>✅ Підключено!</p>
-          <p><b>Адреса:</b> ${wallet.account.address.slice(0, 6)}...${wallet.account.address.slice(-4)}</p>
-        `;
-
-        try {
-          const balance = await connector.getBalance();
-          document.querySelector('.balance').innerText = `Баланс: ${(balance / 1e9).toFixed(4)} TON`;
-        } catch (e) {
-          console.error(e);
-        }
-      } else {
-        statusEl.innerHTML = '';
-        document.querySelector('.balance').innerText = 'Баланс: 0.00 $';
+    // === ЧЕКАЄМО, ПОКИ CDN ЗАВАНТАЖИТЬСЯ ===
+    const initTonConnect = async () => {
+      if (!window.TonConnectUI) {
+        console.error('TON Connect не завантажився!');
+        return;
       }
-    });
 
-    // MOCK
+      const connector = new window.TonConnectUI({
+        manifestUrl: 'https://giftify-ua1.vercel.app/tonconnect-manifest.json',
+        buttonRootId: 'connect'
+      });
+
+      const statusEl = document.getElementById('status');
+
+      connector.onStatusChange(async (wallet) => {
+        if (wallet) {
+          statusEl.innerHTML = `
+            <p>✅ Підключено!</p>
+            <p><b>Адреса:</b> ${wallet.account.address.slice(0, 6)}...${wallet.account.address.slice(-4)}</p>
+          `;
+
+          try {
+            const balance = await connector.getBalance();
+            document.querySelector('.balance').innerText = `Баланс: ${(balance / 1e9).toFixed(4)} TON`;
+          } catch (e) {
+            console.error(e);
+          }
+        } else {
+          statusEl.innerHTML = '';
+          document.querySelector('.balance').innerText = 'Баланс: 0.00 $';
+        }
+      });
+    };
+
+    // Запускаємо після завантаження
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initTonConnect);
+    } else {
+      initTonConnect();
+    }
+
+    // === MOCK ДЛЯ БРАУЗЕРА ===
     if (!window.Telegram?.WebApp) {
       console.warn('Telegram WebApp not found – using mock');
       window.Telegram = { WebApp: { initData: 'mock', initDataUnsafe: { user: { id: 123 } } } };
