@@ -1,7 +1,7 @@
 {
   "url": "https://giftify-ua1.vercel.app",
   "name": "Giftify UA",
-  "iconUrl": "https://giftify-ua1.vercel.app/icon.png",
-  "termsOfUseUrl": "https://giftify-ua1.vercel.app/terms",
-  "privacyPolicyUrl": "https://giftify-ua1.vercel.app/privacy"
+  "iconUrl": "https://giftify-ua1.vercel.app/favicon.ico",
+  "termsOfUseUrl": "https://giftify-ua1.vercel.app",
+  "privacyPolicyUrl": "https://giftify-ua1.vercel.app"
 }
