@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Giftify UA</title>
   <link rel="icon" href="/favicon.ico" />
-  <!-- TON CONNECT CDN -->
-  <script src="https://unpkg.com/@tonconnect/ui@1.0.0/dist/tonconnect-ui.min.js"></script>
+  <!-- СТАБІЛЬНИЙ CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@1.0.0/dist/tonconnect-ui.min.js"></script>
   <style>
     body { font-family: Arial; text-align: center; background: #1a1a1a; color: #fff; margin: 0; padding: 20px; }
     button { padding: 12px 24px; margin: 10px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; }
@@ -25,10 +25,11 @@
   <div id="status"></div>
 
   <script type="module">
-    // === ЧЕКАЄМО, ПОКИ CDN ЗАВАНТАЖИТЬСЯ ===
-    const initTonConnect = async () => {
+    // Чекаємо, поки CDN завантажиться
+    const initTonConnect = () => {
       if (!window.TonConnectUI) {
-        console.error('TON Connect не завантажився!');
+        console.error('TON Connect не завантажився! Перевір CDN.');
+        document.getElementById('status').innerHTML = '<p style="color:red;">Помилка завантаження TON Connect</p>';
         return;
       }
 
@@ -42,7 +43,7 @@
       connector.onStatusChange(async (wallet) => {
         if (wallet) {
           statusEl.innerHTML = `
-            <p>✅ Підключено!</p>
+            <p>Підключено!</p>
             <p><b>Адреса:</b> ${wallet.account.address.slice(0, 6)}...${wallet.account.address.slice(-4)}</p>
           `;
 
@@ -66,7 +67,7 @@
       initTonConnect();
     }
 
-    // === MOCK ДЛЯ БРАУЗЕРА ===
+    // MOCK
     if (!window.Telegram?.WebApp) {
       console.warn('Telegram WebApp not found – using mock');
       window.Telegram = { WebApp: { initData: 'mock', initDataUnsafe: { user: { id: 123 } } } };
