@@ -4,140 +4,60 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Giftify UA</title>
-  <script src="https://unpkg.com/lottie-web@5.12.2/build/player/lottie.min.js"></script>
-  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+  <script src="https://unpkg.com/@tonconnect/ui@1.0.0/dist/tonconnect-ui.min.js"></script>
   <style>
     body { font-family: Arial; text-align: center; background: #1a1a1a; color: #fff; margin: 0; padding: 20px; }
-    #gift-anim { width: 200px; height: 200px; margin: 20px auto; }
-    button { margin: 10px; padding: 12px 20px; font-size: 16px; }
-    #ton-info { margin: 20px; padding: 15px; background: #333; border-radius: 10px; }
+    button { padding: 12px 24px; margin: 10px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; }
+    #connect { background: #0070f3; color: white; }
+    #status { margin-top: 20px; font-size: 14px; }
+    .balance { font-size: 24px; margin: 20px 0; }
   </style>
 </head>
 <body>
-  <h1>Привіт, <span id="username">Гість</span>!</h1>
-  <p>Баланс: <span id="balance">0.00</span> $</p>
-  <button id="refresh-btn">Оновити</button>
-  <button id="connect-ton-btn">Підключити TON Wallet</button>
+  <h1>Привіт, Гість!</h1>
+  <div class="balance">Баланс: 0.00 $</div>
 
-  <div id="gift-anim"></div>
+  <button id="connect">Підключити TON Wallet</button>
+  <button onclick="location.reload()">Оновити</button>
 
-  <div id="ton-info" style="display:none;">
-    <p>Адреса: <span id="ton-address">—</span></p>
-    <p>TON баланс: <span id="ton-balance">0.00</span></p>
-    <button id="deposit-btn" style="display:none;">Депозит 0.1 TON → Gifts</button>
-  </div>
+  <div id="status"></div>
 
   <script type="module">
-    // === ЗАХИСТ ВІД БІЛОГО ЕКРАНУ + DOM ===
-    document.addEventListener('DOMContentLoaded', async () => {
-      function initTelegramWebApp() {
-        if (window.Telegram?.WebApp) {
-          window.Telegram.WebApp.ready();
-          window.Telegram.WebApp.expand();
-          return window.Telegram.WebApp;
-        } else {
-          console.warn('Telegram WebApp not found — using mock');
-          window.Telegram = {
-            WebApp: {
-              initData: 'mock',
-              initDataUnsafe: { user: { id: 999, first_name: 'Гість', username: 'guest' } },
-              ready: () => console.log('Mock ready'),
-              expand: () => console.log('Mock expand'),
-              MainButton: {
-                setText: (t) => { this._text = t; return this; },
-                onClick: (cb) => { this._click = cb; return this; },
-                show: () => console.log('MainButton shown'),
-                _text: '',
-                _click: null
-              }
-            }
-          };
-          return window.Telegram.WebApp;
-        }
-      }
+    // === TON CONNECT ===
+    const connector = new TON_CONNECT.UI.TonConnectUI({
+      manifestUrl: 'https://giftify-ua1.vercel.app/tonconnect-manifest.json',
+      buttonRootId: 'connect'
+    });
 
-      const tg = initTelegramWebApp();
-      const tgUser = tg.initDataUnsafe?.user || { id: 999, first_name: 'Гість', username: 'guest' };
+    const statusEl = document.getElementById('status');
 
-      // === ІМПОРТИ ===
-      const { User } = await import('./src/domain/User.js');
-      const { GetBalanceUseCase } = await import('./src/application/GetBalanceUseCase.js');
-      const { MockBalanceGateway } = await import('./src/infrastructure/gateways/MockBalanceGateway.js');
-      const { HttpGiftGateway } = await import('./src/infrastructure/gateways/HttpGiftGateway.js');
-      const { TonConnectGateway } = await import('./src/infrastructure/gateways/TonConnectGateway.js');
-      const { DepositGiftUseCase } = await import('./src/application/DepositGiftUseCase.js');
+    // Перевірка підключення
+    connector.onStatusChange(async (wallet) => {
+      if (wallet) {
+        statusEl.innerHTML = `
+          <p>✅ Підключено!</p>
+          <p><b>Адреса:</b> ${wallet.account.address.slice(0, 6)}...${wallet.account.address.slice(-4)}</p>
+        `;
 
-      // === USER ===
-      const user = new User(tgUser.id, tgUser.first_name, tgUser.username);
-      document.getElementById('username').textContent = user.getDisplayName();
-
-      // === БАЛАНС ===
-      const balanceGateway = new MockBalanceGateway('777.77');
-      const useCase = new GetBalanceUseCase(balanceGateway);
-
-      async function updateBalance() {
+        // Баланс (у TON)
         try {
-          const balance = await useCase.execute(user.id);
-          document.getElementById('balance').textContent = `${balance.toFixed(2)} $`;
+          const balance = await connector.getBalance();
+          document.querySelector('.balance').innerText = `Баланс: ${(balance / 1e9).toFixed(4)} TON`;
         } catch (e) {
           console.error(e);
         }
+      } else {
+        statusEl.innerHTML = '';
+        document.querySelector('.balance').innerText = 'Баланс: 0.00 $';
       }
-
-      document.getElementById('refresh-btn').onclick = updateBalance;
-      tg.MainButton.setText('Оновити').onClick(updateBalance).show();
-      updateBalance();
-
-      // === АНІМАЦІЯ ===
-      const giftGateway = new HttpGiftGateway();
-      const GIFT_ID = 'AstralShard-21';
-
-      async function loadGift() {
-        try {
-          const animData = await giftGateway.loadGiftAnimation(GIFT_ID);
-          lottie.loadAnimation({
-            container: document.getElementById('gift-anim'),
-            renderer: 'svg',
-            loop: true,
-            autoplay: true,
-            animationData: animData
-          });
-        } catch (error) {
-          console.error('Gift error:', error);
-          const container = document.getElementById('gift-anim');
-          if (container) container.innerHTML = '<p style="color:red">Анімація недоступна</p>';
-        }
-      }
-      loadGift();
-
-      // === TON WALLET ===
-      const tonGateway = new TonConnectGateway();
-      const depositUseCase = new DepositGiftUseCase(tonGateway, balanceGateway);
-
-      document.getElementById('connect-ton-btn').onclick = async () => {
-        try {
-          const address = await tonGateway.connect();
-          const info = document.getElementById('ton-info');
-          info.style.display = 'block';
-          document.getElementById('ton-address').textContent = address.slice(0, 8) + '...';
-          const balance = await tonGateway.getBalance(address);
-          document.getElementById('ton-balance').textContent = balance;
-          document.getElementById('deposit-btn').style.display = 'block';
-        } catch (error) {
-          alert('Помилка підключення: ' + error.message);
-        }
-      };
-
-      document.getElementById('deposit-btn').onclick = async () => {
-        try {
-          await depositUseCase.execute(0.1);
-          alert('Депозит 0.1 TON відправлено! Баланс оновлено.');
-          updateBalance();
-        } catch (error) {
-          alert('Помилка депозиту: ' + error.message);
-        }
-      };
     });
+
+    // === MOCK ДЛЯ БРАУЗЕРА ===
+    if (!window.Telegram?.WebApp) {
+      console.warn('Telegram WebApp not found – using mock');
+      window.Telegram = { WebApp: { initData: 'mock', initDataUnsafe: { user: { id: 123 } } } };
+    }
   </script>
 </body>
 </html>
+
